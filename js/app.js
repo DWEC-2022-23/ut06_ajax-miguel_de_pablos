@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     input.value = '';
     const li = createLI(text);
     ul.appendChild(li);
+    addGuest(text)
   });
 
   ul.addEventListener('change', (e) => {
@@ -71,8 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (checked) {
       listItem.className = 'responded';
+      updateGuest(listItem.id, listItem.firstElementChild.textContent, true)
     } else {
       listItem.className = '';
+      updateGuest(listItem.id, listItem.firstElementChild.textContent, false)
     }
   });
 
@@ -84,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const action = button.textContent;
       const nameActions = {
         remove: () => {
-          ul.removeChild(li);
           removeGuest(li.id);
+          ul.removeChild(li);
         },
         edit: () => {
           const span = li.firstElementChild;
@@ -103,8 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
           li.insertBefore(span, input);
           li.removeChild(input);
           button.textContent = 'edit';
-
-          editGuest(li.id, input.value, true)
+          updateGuest(li.id, span.textContent, li.childNodes[1].childNodes[1].checked)
         }
       };
 
@@ -122,10 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeButton = document.createElement("button");
 
     span.textContent = guest.nombre;
-    label.setAttribute("for", "confirmed");
     label.textContent = "Confirmed ";
     input.setAttribute("type", "checkbox");
-    input.setAttribute("name", "confirmed");
     input.checked = guest.confirmado;
     if (guest.confirmado) listItem.className = 'responded';
     editButton.textContent = "edit";
@@ -142,71 +142,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const xhttp = new XMLHttpRequest();
-  xhttp.open('GET', '../novios.json', true);
+  xhttp.open('GET', 'http://localhost:3000/invitados');
   xhttp.send();
 
   xhttp.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
       let data = JSON.parse(this.responseText);
-      data.invitados.forEach(guest => {
+      data.forEach(guest => {
         ul.appendChild(createListItem(guest))
       })
     }
   }
 
-  function addGuest(name, confirmed) {
-    $.ajax({
-      type: "POST",
-      url: "../php/controller.php",
-      data: {
-        action: "add",
-        name: name,
-        confirmed: confirmed
-      },
-      success: function (response) {
-        console.log("Invitado añadido");
-      },
-      error: function (xhr, status, error) {
-        console.error("Error al añadir invitado");
-      }
-    });
+  function addGuest(nombre) {
+    const xhttp = new XMLHttpRequest();
+    xhttp.open('POST', `http://localhost:3000/invitados`);
+    xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhttp.send(JSON.stringify({ nombre, confirmado: false }));
   }
 
-  function editGuest(index, name, confirmed) {
-    $.ajax({
-      type: "POST",
-      url: "../php/controller.php",
-      data: {
-        action: "edit",
-        index: index,
-        name: name,
-        confirmed: confirmed
-      },
-      success: function (response) {
-        console.log("Invitado editado");
-      },
-      error: function (xhr, status, error) {
-        console.error("Error al editar invitado");
-      }
-    });
+  function updateGuest(id, nombre, confirmado) {
+    const xhttp = new XMLHttpRequest();
+    xhttp.open('PUT', `http://localhost:3000/invitados/${id}`);
+    xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhttp.send(JSON.stringify({ nombre, confirmado }));
   }
 
-  function removeGuest(index) {
-    $.ajax({
-      type: "POST",
-      url: "../php/controller.php",
-      data: {
-        action: "remove",
-        index: index
-      },
-      success: function (response) {
-        console.log("Invitado eliminado");
-      },
-      error: function (xhr, status, error) {
-        console.error("Error al eliminar invitado");
-      }
-    });
+  function removeGuest(id) {
+    const xhttp = new XMLHttpRequest();
+    xhttp.open('DELETE', `http://localhost:3000/invitados/${id}`);
+    xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhttp.send();
   }
+
 
 });
 
